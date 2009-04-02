@@ -1,0 +1,4 @@
+DISTFILES += \
+    AUTHORS \
+    README
+

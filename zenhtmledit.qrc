@@ -1,0 +1,29 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+  <qresource prefix="/defaults" >
+    <file alias="about.html" >text/about.html</file>
+    <file alias="clean.html" >text/clean.html</file>
+   <file alias="clean.xhtml" >text/clean.xhtml</file>
+ </qresource>
+  <qresource prefix="/images" >
+    <file alias="application_edit.png" >images/famfamfam_silk/application_edit.png</file>
+    <file alias="page_edit.png" >images/famfamfam_silk/page_edit.png</file>
+    <file alias="pilcrow.png" >images/famfamfam_silk/pilcrow.png</file>
+    <file alias="style.png" >images/famfamfam_silk/style.png</file>
+    <file alias="bold.png" >images/famfamfam_silk/text_bold.png</file>
+    <file alias="italic.png" >images/famfamfam_silk/text_italic.png</file>
+		<file alias="underline.png" >images/famfamfam_silk/text_underline.png</file>
+		<file alias="text_strikethrough.png" >images/famfamfam_silk/text_strikethrough.png</file>
+		<file alias="text_subscript.png" >images/famfamfam_silk/text_subscript.png</file>
+		<file alias="text_superscript.png" >images/famfamfam_silk/text_superscript.png</file>
+		<file alias="text_list_bullets.png" >images/famfamfam_silk/text_list_bullets.png</file>
+		<file alias="text_list_numbers.png" >images/famfamfam_silk/text_list_numbers.png</file>
+		<file alias="text_indent.png" >images/famfamfam_silk/text_indent.png</file>
+		<file alias="text_outdent.png" >images/famfamfam_silk/text_indent_remove.png</file>
+		<file alias="text_align_left.png" >images/famfamfam_silk/text_align_left.png</file>
+		<file alias="text_align_center.png" >images/famfamfam_silk/text_align_center.png</file>
+		<file alias="text_align_justify.png" >images/famfamfam_silk/text_align_justify.png</file>
+		<file alias="text_align_right.png" >images/famfamfam_silk/text_align_right.png</file>
+  <file alias="palette.png" >images/famfamfam_silk/palette.png</file>
+ </qresource>
+</RCC>
