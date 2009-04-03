@@ -9,10 +9,7 @@ mac {
     TARGET = zenhtmledit
 }
 
-DESTDIR = ../
-
-include(../pri/git.pri)
-include(../pri/webkittrunk.pri)
 include(../zenhtmledit.pri)
+include(../distfiles.pri)
 include(src.pri)
 

@@ -1,0 +1,4 @@
+DISTFILES += \
+    $$PWD/AUTHORS \
+    $$PWD/README
+
