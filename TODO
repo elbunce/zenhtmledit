@@ -1,0 +1,25 @@
+Assorted TODO items:
++ Image dialog
+    + Insert
+    + Edit (eventually, leverage jQuery-like DOM maybe?)
++ Link dialog
+    + Insert
+    + Edit (eventually, leverage jQuery-like DOM maybe?)
++ Insert HTML dialog
++ "Pretty" start document (preferably made using the editor itself.... ;-)
++ Improve the HtmlSourceHighlighter.
++ Some more build cleanup so I can build against multiple QtWebKit versions at once... 
++ Preferences dialog.
++ Simple JavaScript test window.
++ Simple Project Editor
+    + Start out with just a list populated with a dir-model showing HTML files maybe?
++ Find some kind soul to make an icon... 
++ Write a real README
+
+TODO items tied to elbunce's QtWebKit trunk items:
+    + ShowColor - once I've got my color dialog done
+    + ShowBackgroundColor - once I've got my color dialog done
+    + ShowFont - once I've got my font dialog done
+    + Spell / Grammar check support
+
+
