@@ -526,7 +526,9 @@ void HtmlEditMainWindow::setupMenus()
     editMenu->addAction(m_view->pageAction(QWebPage::PasteAndMatchStyle));
 #endif
 #if QT_VERSION >= 0x040500
-    editMenu->addAction(m_view->pageAction(QWebPage::SelectAll));
+    action = m_view->pageAction(QWebPage::SelectAll);
+    if (action)
+        editMenu->addAction(action);
 #endif
 
     m_viewMenu = menuBar()->addMenu(tr("&View"));

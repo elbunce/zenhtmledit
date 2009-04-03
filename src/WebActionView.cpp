@@ -59,7 +59,6 @@ WebActionView::WebActionView(QWebView* view, QWidget* parent, Qt::WindowFlags fl
     QLabel* label;
     QAction* action;
     QToolButton* button;
-    QHBoxLayout* hBoxLayout;
     int baseCol = 0;
     int row = 0;
     for (int i = 0; i < QWebPage::WebActionCount; i++) {
