@@ -386,7 +386,7 @@ void HtmlEditMainWindow::setupUI()
 {
     // Set base UI attributes
     setWindowTitle("QtHtmlEdit");
-//    setUnifiedTitleAndToolBarOnMac(true);
+    setUnifiedTitleAndToolBarOnMac(true);
     setIconSize(QSize(16, 16));
 
     m_view = new QWebView(this);
@@ -655,8 +655,6 @@ void HtmlEditMainWindow::setupToolBars()
     // setup the toolbar
     QToolBar* bar = addToolBar("Edit ToolBar");
     bar->setFont(font);
-    bar->addAction(m_editableAction);
-    bar->addSeparator();
     bar->addAction(m_paraMenu->menuAction());
     m_fontComboBox = new QFontComboBox;
     connect(m_fontComboBox, SIGNAL(currentFontChanged(const QFont&)), 
