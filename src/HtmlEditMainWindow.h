@@ -54,7 +54,8 @@ class QWebView;
   \brief The HtmlEditMainWindow class provides a test harness / example of 
   using Qt WebKit for embedded XHTML/HTML editing.
 */
-class HtmlEditMainWindow : public QMainWindow {
+class HtmlEditMainWindow : public QMainWindow 
+{
     Q_OBJECT
 public:
     /*!
@@ -124,9 +125,9 @@ private slots:
     //! Handle a common exec command action.
     void handleExecCommandAction(QAction* action);
 
-		//! Handle a color change action.
-		void handleColorChange();
-
+    //! Handle a color change action.
+    void handleColorChange();
+    
     //! Handles the font name being changed.
     void handleFontChanged(const QFont& font);
 
@@ -134,11 +135,23 @@ private slots:
     void handleViewAboutToShow();
 
 private:
-		//! Converts the passed \a rgba color string to a QColor
-		QColor toColor(const QString& rgba);
-
+    //! Converts the passed \a rgba color string to a QColor
+    QColor toColor(const QString& rgba);
+    
     //! Setup the UI.
     void setupUI();
+
+    //! Setup actions
+    void setupActions();
+    
+    //! Setup menus
+    void setupMenus();
+
+    //! Setup ToolBars
+    void setupToolBars();
+
+    //! Setup the docks
+    void setupDocks();
 
 private:
     //! The set of filters to use int he file open dialog.
@@ -161,6 +174,12 @@ private:
       tracking if rich text operations are possible.
     */
     QAction* m_boldAction;
+
+    //! The color action
+    QAction* m_colorAction;
+
+    //! The background color action
+    QAction* m_backgroundColorAction;
 
     //! Action to trigger dumping the contents as plain text
     QAction* m_dumpPlainTextAction;

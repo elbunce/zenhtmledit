@@ -201,8 +201,7 @@ void HtmlEditMainWindow::saveFile()
 
     // attempt to open the file for write
     QFile file(fileName);
-    if (!file.open(QFile::WriteOnly | QFile::Truncate))
-    {
+    if (!file.open(QFile::WriteOnly | QFile::Truncate)) {
         QString message = tr("Failed to open %1 for write: %2").arg(file.fileName()).arg(file.errorString());
         qWarning() << message;
         QMessageBox::warning(this, tr("Save Failed"), message);
@@ -247,7 +246,7 @@ void HtmlEditMainWindow::about()
     
     QMessageBox::about(this, tr("About QtHtmlEdit"), 
                        html.arg(QApplication::applicationVersion())
-											 .arg(GITVERSION).arg(GITCHANGENUMBER));
+                       .arg(GITVERSION).arg(GITCHANGENUMBER));
 }
 
 void HtmlEditMainWindow::setEditable(bool on)
@@ -319,26 +318,24 @@ void HtmlEditMainWindow::handleExecCommandAction(QAction* action)
 
 void HtmlEditMainWindow::handleColorChange()
 {
-	QAction* action = ::qobject_cast<QAction*>(sender());
-	Q_ASSERT(action);
-	if (!action)
-		return;
-
-	// figure out which color we're getting
-	QString whichColor = action->data().toString();
-	Q_ASSERT(!whichColor.isEmpty());
-	if (whichColor.isEmpty())
-		return;
-
-	QVariant res = evalJavaScript(QString("document.queryCommandValue('%1');").arg(whichColor));
-	QColor color = toColor(res.toString());
-	
-	color = QColorDialog::getColor(color, m_view);
-
-	if (color.isValid())
-		evalJavaScript(QString("document.execCommand('%1', false, '%2');").arg(whichColor).arg(color.name()));
-	
-
+    QAction* action = ::qobject_cast<QAction*>(sender());
+    Q_ASSERT(action);
+    if (!action)
+        return;
+    
+    // figure out which color we're getting
+    QString whichColor = action->data().toString();
+    Q_ASSERT(!whichColor.isEmpty());
+    if (whichColor.isEmpty())
+        return;
+    
+    QVariant res = evalJavaScript(QString("document.queryCommandValue('%1');").arg(whichColor));
+    QColor color = toColor(res.toString());
+    
+    color = QColorDialog::getColor(color, m_view);
+    
+    if (color.isValid())
+        evalJavaScript(QString("document.execCommand('%1', false, '%2');").arg(whichColor).arg(color.name()));
 }
 
 void HtmlEditMainWindow::handleFontChanged(const QFont& font)
@@ -369,34 +366,32 @@ void HtmlEditMainWindow::handleViewAboutToShow()
 
 QColor HtmlEditMainWindow::toColor(const QString& rgba)
 {
-	// try to match rgba(r, g, b, a)
-	if (rgbaExpression.exactMatch(rgba))
-	{
-		QStringList ct = rgbaExpression.capturedTexts();
-		return QColor(ct.value(1).toInt(), ct.value(2).toInt(), ct.value(3).toInt(), ct.value(4).toInt());
-	}
-
-	// try to match rgb(r, g, b)
-	if (rgbExpression.exactMatch(rgba))
-	{
-		QStringList ct = rgbExpression.capturedTexts();
-		return QColor(ct.value(1).toInt(), ct.value(2).toInt(), ct.value(3).toInt());
-	}
-
-	// convert from name
-	return QColor(rgba);
+    // try to match rgba(r, g, b, a)
+    if (rgbaExpression.exactMatch(rgba)) {
+        QStringList ct = rgbaExpression.capturedTexts();
+        return QColor(ct.value(1).toInt(), ct.value(2).toInt(), ct.value(3).toInt(), ct.value(4).toInt());
+    }
+    
+    // try to match rgb(r, g, b)
+    if (rgbExpression.exactMatch(rgba)) {
+        QStringList ct = rgbExpression.capturedTexts();
+        return QColor(ct.value(1).toInt(), ct.value(2).toInt(), ct.value(3).toInt());
+    }
+    
+    // convert from name
+    return QColor(rgba);
 }
 
 void HtmlEditMainWindow::setupUI()
 {
     // Set base UI attributes
     setWindowTitle("QtHtmlEdit");
-    setUnifiedTitleAndToolBarOnMac(true);
+//    setUnifiedTitleAndToolBarOnMac(true);
     setIconSize(QSize(16, 16));
 
     m_view = new QWebView(this);
     setCentralWidget(m_view);
-    
+
     // setup a progress bar to display while we're loading
     m_progress = new QProgressBar(this);
     m_progress->setRange(0, 100);
@@ -404,163 +399,46 @@ void HtmlEditMainWindow::setupUI()
     m_progress->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     m_progress->hide();
     statusBar()->addPermanentWidget(m_progress);
-    
+
     connect(m_view, SIGNAL(loadProgress(int)), m_progress, SLOT(show()));
     connect(m_view, SIGNAL(loadProgress(int)), m_progress, SLOT(setValue(int)));
     connect(m_view, SIGNAL(loadFinished(bool)), m_progress, SLOT(hide()));
-    
+
+    setupActions();
+    setupMenus();
+    setupToolBars();
+    setupDocks();
+
+    connect(m_view, SIGNAL(loadFinished(bool)),
+            this, SLOT(handleLoadFinished()));
+    connect(m_view, SIGNAL(titleChanged(const QString&)),
+            this, SLOT(handleTitleChanged(const QString&)));
+    connect(m_view->page(), SIGNAL(linkHovered(const QString&, const QString&, const QString&)),
+            this, SLOT(handleLinkHover(const QString&, const QString&)));
+    connect(m_view->page(), SIGNAL(selectionChanged()),
+            this, SLOT(handlePageContentsChanged()));
+    connect(m_view->page(), SIGNAL(contentsChanged()),
+            this, SLOT(handlePageContentsChanged()));
+    connect(m_boldAction, SIGNAL(changed()), 
+            this, SLOT(handlePageActionChanged()));
+   
+    openDefaultXHtml();
+}
+
+void HtmlEditMainWindow::setupActions()
+{
     QAction* action;
-
-    // setup the menus
-    QMenu* fileMenu = menuBar()->addMenu(tr("&File"));
-    action = fileMenu->addAction(tr("&New Window"), this, SLOT(newWindow()), QKeySequence(Qt::CTRL | Qt::Key_N));
-    fileMenu->addSeparator();
-    fileMenu->addAction(tr("Open File..."), this, SLOT(openFile()), QKeySequence(Qt::CTRL | Qt::Key_O));
-    fileMenu->addAction(tr("Open Location..."), this, SLOT(openLocation()), QKeySequence(Qt::CTRL | Qt::Key_L));
-    fileMenu->addAction(tr("Open Default &HTML"), this, SLOT(openDefaultHtml()));
-    fileMenu->addAction(tr("Open Default &XHTML"), this, SLOT(openDefaultXHtml())); 
-    fileMenu->addSeparator();
-    fileMenu->addAction(tr("&Close"), this, SLOT(close()), QKeySequence(Qt::CTRL | Qt::Key_W));
-    fileMenu->addAction(tr("&Save Page As..."), this, SLOT(saveFile()), QKeySequence(Qt::CTRL | Qt::Key_S));
-
-
-    QMenu* editMenu = menuBar()->addMenu(tr("&Edit"));
-    m_editableAction = editMenu->addAction(QIcon(":/images/page_edit.png"), tr("Editable"), this, SLOT(setEditable(bool)));
-    m_editableAction->setCheckable(true);
-    m_editableAction->setChecked(true);
-    editMenu->addSeparator();
-    editMenu->addAction(m_view->pageAction(QWebPage::Undo));
-    editMenu->addAction(m_view->pageAction(QWebPage::Redo));
-    editMenu->addSeparator();
-    editMenu->addAction(m_view->pageAction(QWebPage::Cut));
-    editMenu->addAction(m_view->pageAction(QWebPage::Copy));
-    editMenu->addAction(m_view->pageAction(QWebPage::Paste));
-#ifdef WEBKIT_TRUNK
-    editMenu->addAction(m_view->pageAction(QWebPage::PasteAndMatchStyle));
-#endif
-#if QT_VERSION >= 0x040500
-    editMenu->addAction(m_view->pageAction(QWebPage::SelectAll));
-#endif
-
-    m_viewMenu = menuBar()->addMenu(tr("&View"));
-    connect(m_viewMenu, SIGNAL(aboutToShow()),
-            this, SLOT(handleViewAboutToShow()));
-    m_dumpPlainTextAction = new QAction(tr("Dump Plain Text"), this);
-    connect(m_dumpPlainTextAction, SIGNAL(triggered(bool)),
-            this, SLOT(dumpPlainText()));
-    m_dumpHtmlAction = new QAction(tr("Dump HTML"), this);
-    connect(m_dumpHtmlAction, SIGNAL(triggered(bool)),
-            this, SLOT(dumpHtml()));
-    m_dumpRenderTreeAction = new QAction(tr("Dump RenderTree"), this);
-    connect(m_dumpRenderTreeAction, SIGNAL(triggered(bool)),
-            this, SLOT(dumpRenderTree()));
-		
-    QMenu* formatMenu = menuBar()->addMenu(tr("F&ormat"));
-    QMenu* fontMenu;
-#ifdef WEBKIT_TRUNK
-    fontMenu = formatMenu->addMenu(tr("&Font"));
-#else
-    fontMenu = formatMenu;
-#endif
-    
-    m_boldAction = m_view->pageAction(QWebPage::ToggleBold);
-    fontMenu->addAction(m_boldAction);
-    fontMenu->addAction(m_view->pageAction(QWebPage::ToggleItalic));
-    fontMenu->addAction(m_view->pageAction(QWebPage::ToggleUnderline));
-#ifdef WEBKIT_TRUNK
-    fontMenu->addAction(m_view->pageAction(QWebPage::ToggleStrikethrough));
-    fontMenu->addAction(m_view->pageAction(QWebPage::ToggleSubscript));
-    fontMenu->addAction(m_view->pageAction(QWebPage::ToggleSuperscript));
-#endif
-    
-    m_sizeMenu = new QMenu(tr("Size"), 0);
-    m_sizeMenu->setIcon(QIcon(":/images/style.png"));
-    formatMenu->addMenu(m_sizeMenu);
-    connect(m_sizeMenu, SIGNAL(triggered(QAction*)), this, SLOT(handleExecCommandAction(QAction*)));
-    action = m_sizeMenu->addAction(tr("X Small"));
-    action->setData(QStringList() << "FontSize" << "1");
-    action = m_sizeMenu->addAction(tr("Small"));
-    action->setData(QStringList() << "FontSize" << "2");
-    action = m_sizeMenu->addAction(tr("Medium"));
-    action->setData(QStringList() << "FontSize" << "3");
-    m_sizeMenu->setDefaultAction(action);
-    connect(m_sizeMenu->menuAction(), SIGNAL(triggered(bool)),
-            action, SIGNAL(triggered(bool)));
-    action = m_sizeMenu->addAction(tr("Large"));
-    action->setData(QStringList() << "FontSize" << "5");
-    action = m_sizeMenu->addAction(tr("X Large"));
-    action->setData(QStringList() << "FontSize" << "6");
-    action = m_sizeMenu->addAction(tr("XX Large"));
-    action->setData(QStringList() << "FontSize" << "7");
-
-    m_paraMenu = new QMenu(tr("&Style"), 0);
-    m_paraMenu->menuAction()->setIcon(QIcon(":/images/pilcrow.png"));
-    m_paraMenu->menuAction()->setIconVisibleInMenu(false);
-    m_paraMenu->setToolTip(tr("Choose a paragraph style."));
-    formatMenu->addMenu(m_paraMenu);
-    connect(m_paraMenu, SIGNAL(triggered(QAction*)), 
-            this, SLOT(handleExecCommandAction(QAction*)));
-    action = m_paraMenu->addAction(tr("Default (div)"));
-    action->setData(QStringList() << "FormatBlock" << "div");
-    connect(m_paraMenu->menuAction(), SIGNAL(triggered(bool)),
-            
-            action, SIGNAL(triggered(bool)));
-    action = m_paraMenu->addAction(tr("Paragraph"));
-    action->setData(QStringList() << "FormatBlock" << "p");
-    action = m_paraMenu->addAction(tr("Preformatted"));
-    action->setData(QStringList() << "FormatBlock" << "pre");
-    action = m_paraMenu->addAction(tr("Heading 1"));
-    action->setData(QStringList() << "FormatBlock" << "h1");
-    action = m_paraMenu->addAction(tr("Heading 2"));
-    action->setData(QStringList() << "FormatBlock" << "h2");
-    action = m_paraMenu->addAction(tr("Heading 3"));
-    action->setData(QStringList() << "FormatBlock" << "h3");
-    action = m_paraMenu->addAction(tr("Heading 4"));
-    action->setData(QStringList() << "FormatBlock" << "h4");
-    action = m_paraMenu->addAction(tr("Heading 5"));
-    action->setData(QStringList() << "FormatBlock" << "h5");
-    action = m_paraMenu->addAction(tr("Heading 6"));
-    action->setData(QStringList() << "FormatBlock" << "h6");
-    action = m_paraMenu->addAction(tr("Address"));
-    action->setData(QStringList() << "FormatBlock" << "address");
-    action = m_paraMenu->addAction(tr("Span"));
-    action->setData(QStringList() << "FormatBlock" << "span");
-
-#ifdef WEBKIT_TRUNK
-    QMenu* listMenu = formatMenu->addMenu(tr("&List"));
-    listMenu->addAction(m_view->pageAction(QWebPage::InsertUnorderedList));
-    listMenu->addAction(m_view->pageAction(QWebPage::InsertOrderedList));
-    listMenu->addSeparator();
-    listMenu->addAction(m_view->pageAction(QWebPage::Indent));
-    listMenu->addAction(m_view->pageAction(QWebPage::Outdent));
-
-    QMenu* alignmentMenu = formatMenu->addMenu(tr("&Alignment"));
-    alignmentMenu->addAction(m_view->pageAction(QWebPage::AlignLeft));
-    alignmentMenu->addAction(m_view->pageAction(QWebPage::AlignCenter));
-    alignmentMenu->addAction(m_view->pageAction(QWebPage::AlignJustified));
-    alignmentMenu->addAction(m_view->pageAction(QWebPage::AlignRight));
-    QMenu* writingMenu = alignmentMenu->addMenu(tr("Writing Direction"));
-#else
-    QMenu* writingMenu = formatMenu->addMenu(tr("Writing Direction"));
-#endif
-    writingMenu->addAction(m_view->pageAction(QWebPage::SetTextDirectionDefault));
-    writingMenu->addAction(m_view->pageAction(QWebPage::SetTextDirectionLeftToRight));
-    writingMenu->addAction(m_view->pageAction(QWebPage::SetTextDirectionRightToLeft));
-    QAction* colorAction = formatMenu->addAction(QIcon(":/images/palette.png"), tr("Color"));
-    colorAction->setData("ForeColor");
-    colorAction->setIconVisibleInMenu(false);
-    connect(colorAction, SIGNAL(triggered(bool)),
+    m_colorAction = new QAction(QIcon(":/images/palette.png"), tr("Color"), this);
+    m_colorAction->setData("ForeColor");
+    m_colorAction->setIconVisibleInMenu(false);
+    connect(m_colorAction, SIGNAL(triggered(bool)),
             this, SLOT(handleColorChange()));
-    QAction* backgroundColorAction = formatMenu->addAction(QIcon(":/images/palette.png"), tr("Background Color"));
-    backgroundColorAction->setData("BackColor");
-    backgroundColorAction->setIconVisibleInMenu(false);
-    connect(backgroundColorAction, SIGNAL(triggered(bool)),
+    m_backgroundColorAction = new QAction(QIcon(":/images/palette.png"), tr("Background Color"), this);
+    m_backgroundColorAction->setData("BackColor");
+    m_backgroundColorAction->setIconVisibleInMenu(false);
+    connect(m_backgroundColorAction, SIGNAL(triggered(bool)),
             this, SLOT(handleColorChange()));
-#ifdef WEBKIT_TRUNK
-    formatMenu->addSeparator();
-    formatMenu->addAction(m_view->pageAction(QWebPage::RemoveFormat));
-#endif
-    
+
     m_view->pageAction(QWebPage::Undo)->setShortcut(QKeySequence::Undo);
     m_view->pageAction(QWebPage::Redo)->setShortcut(QKeySequence::Redo);
     m_view->pageAction(QWebPage::Cut)->setShortcut(QKeySequence::Cut);
@@ -575,6 +453,7 @@ void HtmlEditMainWindow::setupUI()
         action->setShortcut(QKeySequence::SelectAll);
 #endif
 
+    m_boldAction = m_view->pageAction(QWebPage::ToggleBold);
     m_boldAction->setIcon(QIcon(":/images/bold.png"));
     m_boldAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_B));
     action = m_view->pageAction(QWebPage::ToggleItalic);
@@ -615,11 +494,159 @@ void HtmlEditMainWindow::setupUI()
     action->setShortcut(QKeySequence("Ctrl+["));
     action->setIcon(QIcon(":/images/text_outdent.png"));
 #endif
-    
+}
+
+void HtmlEditMainWindow::setupMenus()
+{
+    // setup the menus
+    QMenu* fileMenu = menuBar()->addMenu(tr("&File"));
+    QAction* action;
+    action = fileMenu->addAction(tr("&New Window"), this, SLOT(newWindow()), QKeySequence(Qt::CTRL | Qt::Key_N));
+    fileMenu->addSeparator();
+    fileMenu->addAction(tr("Open File..."), this, SLOT(openFile()), QKeySequence(Qt::CTRL | Qt::Key_O));
+    fileMenu->addAction(tr("Open Location..."), this, SLOT(openLocation()), QKeySequence(Qt::CTRL | Qt::Key_L));
+    fileMenu->addAction(tr("Open Default &HTML"), this, SLOT(openDefaultHtml()));
+    fileMenu->addAction(tr("Open Default &XHTML"), this, SLOT(openDefaultXHtml())); 
+    fileMenu->addSeparator();
+    fileMenu->addAction(tr("&Close"), this, SLOT(close()), QKeySequence(Qt::CTRL | Qt::Key_W));
+    fileMenu->addAction(tr("&Save Page As..."), this, SLOT(saveFile()), QKeySequence(Qt::CTRL | Qt::Key_S));
+
+    QMenu* editMenu = menuBar()->addMenu(tr("&Edit"));
+    m_editableAction = editMenu->addAction(QIcon(":/images/page_edit.png"), tr("Editable"), this, SLOT(setEditable(bool)));
+    m_editableAction->setCheckable(true);
+    m_editableAction->setChecked(true);
+    editMenu->addSeparator();
+    editMenu->addAction(m_view->pageAction(QWebPage::Undo));
+    editMenu->addAction(m_view->pageAction(QWebPage::Redo));
+    editMenu->addSeparator();
+    editMenu->addAction(m_view->pageAction(QWebPage::Cut));
+    editMenu->addAction(m_view->pageAction(QWebPage::Copy));
+    editMenu->addAction(m_view->pageAction(QWebPage::Paste));
+#ifdef WEBKIT_TRUNK
+    editMenu->addAction(m_view->pageAction(QWebPage::PasteAndMatchStyle));
+#endif
+#if QT_VERSION >= 0x040500
+    editMenu->addAction(m_view->pageAction(QWebPage::SelectAll));
+#endif
+
+    m_viewMenu = menuBar()->addMenu(tr("&View"));
+    connect(m_viewMenu, SIGNAL(aboutToShow()),
+            this, SLOT(handleViewAboutToShow()));
+    m_dumpPlainTextAction = new QAction(tr("Dump Plain Text"), this);
+    connect(m_dumpPlainTextAction, SIGNAL(triggered(bool)),
+            this, SLOT(dumpPlainText()));
+    m_dumpHtmlAction = new QAction(tr("Dump HTML"), this);
+    connect(m_dumpHtmlAction, SIGNAL(triggered(bool)),
+            this, SLOT(dumpHtml()));
+    m_dumpRenderTreeAction = new QAction(tr("Dump RenderTree"), this);
+    connect(m_dumpRenderTreeAction, SIGNAL(triggered(bool)),
+            this, SLOT(dumpRenderTree()));
+
+    QMenu* formatMenu = menuBar()->addMenu(tr("F&ormat"));
+    QMenu* fontMenu;
+#ifdef WEBKIT_TRUNK
+    fontMenu = formatMenu->addMenu(tr("&Font"));
+#else
+    fontMenu = formatMenu;
+#endif
+
+    fontMenu->addAction(m_boldAction);
+    fontMenu->addAction(m_view->pageAction(QWebPage::ToggleItalic));
+    fontMenu->addAction(m_view->pageAction(QWebPage::ToggleUnderline));
+#ifdef WEBKIT_TRUNK
+    fontMenu->addAction(m_view->pageAction(QWebPage::ToggleStrikethrough));
+    fontMenu->addAction(m_view->pageAction(QWebPage::ToggleSubscript));
+    fontMenu->addAction(m_view->pageAction(QWebPage::ToggleSuperscript));
+#endif
+
+    m_sizeMenu = new QMenu(tr("Size"), 0);
+    m_sizeMenu->setIcon(QIcon(":/images/style.png"));
+    formatMenu->addMenu(m_sizeMenu);
+    connect(m_sizeMenu, SIGNAL(triggered(QAction*)), 
+            this, SLOT(handleExecCommandAction(QAction*)));
+    action = m_sizeMenu->addAction(tr("X Small"));
+    action->setData(QStringList() << "FontSize" << "1");
+    action = m_sizeMenu->addAction(tr("Small"));
+    action->setData(QStringList() << "FontSize" << "2");
+    action = m_sizeMenu->addAction(tr("Medium"));
+    action->setData(QStringList() << "FontSize" << "3");
+    m_sizeMenu->setDefaultAction(action);
+    connect(m_sizeMenu->menuAction(), SIGNAL(triggered(bool)),
+            action, SIGNAL(triggered(bool)));
+    action = m_sizeMenu->addAction(tr("Large"));
+    action->setData(QStringList() << "FontSize" << "5");
+    action = m_sizeMenu->addAction(tr("X Large"));
+    action->setData(QStringList() << "FontSize" << "6");
+    action = m_sizeMenu->addAction(tr("XX Large"));
+    action->setData(QStringList() << "FontSize" << "7");
+
+    m_paraMenu = new QMenu(tr("&Style"), 0);
+    m_paraMenu->menuAction()->setIcon(QIcon(":/images/pilcrow.png"));
+    m_paraMenu->menuAction()->setIconVisibleInMenu(false);
+    m_paraMenu->setToolTip(tr("Choose a paragraph style."));
+    formatMenu->addMenu(m_paraMenu);
+    connect(m_paraMenu, SIGNAL(triggered(QAction*)), 
+            this, SLOT(handleExecCommandAction(QAction*)));
+    action = m_paraMenu->addAction(tr("Default (div)"));
+    action->setData(QStringList() << "FormatBlock" << "div");
+    connect(m_paraMenu->menuAction(), SIGNAL(triggered(bool)),
+            action, SIGNAL(triggered(bool)));
+    action = m_paraMenu->addAction(tr("Paragraph"));
+    action->setData(QStringList() << "FormatBlock" << "p");
+    action = m_paraMenu->addAction(tr("Preformatted"));
+    action->setData(QStringList() << "FormatBlock" << "pre");
+    action = m_paraMenu->addAction(tr("Heading 1"));
+    action->setData(QStringList() << "FormatBlock" << "h1");
+    action = m_paraMenu->addAction(tr("Heading 2"));
+    action->setData(QStringList() << "FormatBlock" << "h2");
+    action = m_paraMenu->addAction(tr("Heading 3"));
+    action->setData(QStringList() << "FormatBlock" << "h3");
+    action = m_paraMenu->addAction(tr("Heading 4"));
+    action->setData(QStringList() << "FormatBlock" << "h4");
+    action = m_paraMenu->addAction(tr("Heading 5"));
+    action->setData(QStringList() << "FormatBlock" << "h5");
+    action = m_paraMenu->addAction(tr("Heading 6"));
+    action->setData(QStringList() << "FormatBlock" << "h6");
+    action = m_paraMenu->addAction(tr("Address"));
+    action->setData(QStringList() << "FormatBlock" << "address");
+    action = m_paraMenu->addAction(tr("Span"));
+    action->setData(QStringList() << "FormatBlock" << "span");
+
+#ifdef WEBKIT_TRUNK
+    QMenu* listMenu = formatMenu->addMenu(tr("&List"));
+    listMenu->addAction(m_view->pageAction(QWebPage::InsertUnorderedList));
+    listMenu->addAction(m_view->pageAction(QWebPage::InsertOrderedList));
+    listMenu->addSeparator();
+    listMenu->addAction(m_view->pageAction(QWebPage::Indent));
+    listMenu->addAction(m_view->pageAction(QWebPage::Outdent));
+
+    QMenu* alignmentMenu = formatMenu->addMenu(tr("&Alignment"));
+    alignmentMenu->addAction(m_view->pageAction(QWebPage::AlignLeft));
+    alignmentMenu->addAction(m_view->pageAction(QWebPage::AlignCenter));
+    alignmentMenu->addAction(m_view->pageAction(QWebPage::AlignJustified));
+    alignmentMenu->addAction(m_view->pageAction(QWebPage::AlignRight));
+
+    QMenu* writingMenu = alignmentMenu->addMenu(tr("Writing Direction"));
+#else
+    QMenu* writingMenu = formatMenu->addMenu(tr("Writing Direction"));
+#endif
+    writingMenu->addAction(m_view->pageAction(QWebPage::SetTextDirectionDefault));
+    writingMenu->addAction(m_view->pageAction(QWebPage::SetTextDirectionLeftToRight));
+    writingMenu->addAction(m_view->pageAction(QWebPage::SetTextDirectionRightToLeft));
+
+    formatMenu->addAction(m_colorAction);
+    formatMenu->addAction(m_backgroundColorAction);
+#ifdef WEBKIT_TRUNK
+    formatMenu->addSeparator();
+    formatMenu->addAction(m_view->pageAction(QWebPage::RemoveFormat));
+#endif
     QMenu* helpMenu = menuBar()->addMenu(tr("&Help"));
     helpMenu->addAction(tr("About QtHtmlEdit"), this, SLOT(about()));
     helpMenu->addAction(tr("About Qt"), QApplication::instance(), SLOT(aboutQt()));
+}
 
+void HtmlEditMainWindow::setupToolBars()
+{
     QFont font;
     font.setPointSize(10);
 
@@ -644,10 +671,11 @@ void HtmlEditMainWindow::setupUI()
     bar->addAction(m_view->pageAction(QWebPage::ToggleSuperscript));
     bar->addSeparator();
 #endif
-    bar->addAction(colorAction);
-    bar->addAction(backgroundColorAction);
+    bar->addAction(m_colorAction);
+    bar->addAction(m_backgroundColorAction);
 #ifdef WEBKIT_TRUNK
-    bar->addSeparator();
+    addToolBarBreak();
+    bar = addToolBar("Layout ToolBar");
     bar->addAction(m_view->pageAction(QWebPage::InsertUnorderedList));
     bar->addAction(m_view->pageAction(QWebPage::InsertOrderedList));
     bar->addAction(m_view->pageAction(QWebPage::Indent));
@@ -658,20 +686,10 @@ void HtmlEditMainWindow::setupUI()
     bar->addAction(m_view->pageAction(QWebPage::AlignJustified));
     bar->addAction(m_view->pageAction(QWebPage::AlignRight));
 #endif
-    
-    connect(m_view, SIGNAL(loadFinished(bool)),
-            this, SLOT(handleLoadFinished()));
-    connect(m_view, SIGNAL(titleChanged(const QString&)),
-            this, SLOT(handleTitleChanged(const QString&)));
-    connect(m_view->page(), SIGNAL(linkHovered(const QString&, const QString&, const QString&)),
-            this, SLOT(handleLinkHover(const QString&, const QString&)));
-    connect(m_view->page(), SIGNAL(selectionChanged()),
-            this, SLOT(handlePageContentsChanged()));
-    connect(m_view->page(), SIGNAL(contentsChanged()),
-            this, SLOT(handlePageContentsChanged()));
-    connect(m_boldAction, SIGNAL(changed()), 
-            this, SLOT(handlePageActionChanged()));
-    
+}
+
+void HtmlEditMainWindow::setupDocks()
+{
     // create / setup the source view dock widget
     QDockWidget* sourceDock = new QDockWidget(tr("Source View"), this);
     sourceDock->setAllowedAreas(Qt::AllDockWidgetAreas);
@@ -686,10 +704,9 @@ void HtmlEditMainWindow::setupUI()
     actionDock->setFeatures(QDockWidget::AllDockWidgetFeatures);
     actionDock->setWidget(actionView);
     addDockWidget(Qt::BottomDockWidgetArea, actionDock, Qt::Horizontal);
-    tabifyDockWidget(actionDock, sourceDock);
-//    actionDock->setFloating(true);
-//    actionDock->hide();
+    actionDock->setFloating(true);
+//    tabifyDockWidget(actionDock, sourceDock);
+    actionDock->hide();
     m_view->setFocus();
-    
-    openDefaultXHtml();
 }
+

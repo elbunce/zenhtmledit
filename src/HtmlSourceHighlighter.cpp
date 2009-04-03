@@ -50,8 +50,7 @@ void HtmlSourceHighlighter::highlightBlock(const QString& text)
 {
 	QRegExp elementRE("<[^>]+>");
 	int index = text.indexOf(elementRE);
-	while (index >= 0)
-	{
+	while (index >= 0) {
 		int length = elementRE.matchedLength();
 		setFormat(index, length, m_elementFormat);
 		index = text.indexOf(elementRE, index + length);
