@@ -512,10 +512,6 @@ void HtmlEditMainWindow::setupMenus()
     fileMenu->addAction(tr("&Save Page As..."), this, SLOT(saveFile()), QKeySequence(Qt::CTRL | Qt::Key_S));
 
     QMenu* editMenu = menuBar()->addMenu(tr("&Edit"));
-    m_editableAction = editMenu->addAction(QIcon(":/images/page_edit.png"), tr("Editable"), this, SLOT(setEditable(bool)));
-    m_editableAction->setCheckable(true);
-    m_editableAction->setChecked(true);
-    editMenu->addSeparator();
     editMenu->addAction(m_view->pageAction(QWebPage::Undo));
     editMenu->addAction(m_view->pageAction(QWebPage::Redo));
     editMenu->addSeparator();
@@ -530,6 +526,10 @@ void HtmlEditMainWindow::setupMenus()
     if (action)
         editMenu->addAction(action);
 #endif
+    editMenu->addSeparator();
+    m_editableAction = editMenu->addAction(QIcon(":/images/page_edit.png"), tr("Editable"), this, SLOT(setEditable(bool)));
+    m_editableAction->setCheckable(true);
+    m_editableAction->setChecked(true);
 
     m_viewMenu = menuBar()->addMenu(tr("&View"));
     connect(m_viewMenu, SIGNAL(aboutToShow()),
