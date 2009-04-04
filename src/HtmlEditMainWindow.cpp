@@ -241,11 +241,14 @@ void HtmlEditMainWindow::about()
     {
         qWarning() << "Failed to open " << file.fileName() << " error:" 
                    << file.errorString();
-        html = "About QtHtmlEdit\nVersion: %1\nBuild: %2 %3";
+        html = "About %1\nVersion: %2\nBuild: %3 %4";
     }
     
-    QMessageBox::about(this, tr("About QtHtmlEdit"), 
-                       html.arg(QApplication::applicationVersion())
+    QMessageBox::about(this,
+                       tr("About %1")
+                       .arg(QApplication::applicationName()), 
+                       html.arg(QApplication::applicationName())
+                       .arg(QApplication::applicationVersion())
                        .arg(GITVERSION).arg(GITCHANGENUMBER));
 }
 
@@ -257,9 +260,10 @@ void HtmlEditMainWindow::setEditable(bool on)
 void HtmlEditMainWindow::handleTitleChanged(const QString& title)
 {
     if (!title.isEmpty())
-        setWindowTitle(tr("QtHtmlEditor - %1").arg(title));
+        setWindowTitle(tr("%1 - %2").arg(QApplication::applicationName())
+                       .arg(title));
     else 
-        setWindowTitle(tr("QtHtmlEditor"));
+        setWindowTitle(tr("%1").arg(QApplication::applicationName()));
 }
 
 void HtmlEditMainWindow::handleLinkHover(const QString &link, const QString &toolTip)
@@ -385,7 +389,7 @@ QColor HtmlEditMainWindow::toColor(const QString& rgba)
 void HtmlEditMainWindow::setupUI()
 {
     // Set base UI attributes
-    setWindowTitle("QtHtmlEdit");
+    setWindowTitle(tr("%1").arg(QApplication::applicationName()));
     setUnifiedTitleAndToolBarOnMac(true);
     setIconSize(QSize(16, 16));
 
@@ -643,7 +647,7 @@ void HtmlEditMainWindow::setupMenus()
     formatMenu->addAction(m_view->pageAction(QWebPage::RemoveFormat));
 #endif
     QMenu* helpMenu = menuBar()->addMenu(tr("&Help"));
-    helpMenu->addAction(tr("About QtHtmlEdit"), this, SLOT(about()));
+    helpMenu->addAction(tr("About %1").arg(QApplication::applicationName()), this, SLOT(about()));
     helpMenu->addAction(tr("About Qt"), QApplication::instance(), SLOT(aboutQt()));
 }
 

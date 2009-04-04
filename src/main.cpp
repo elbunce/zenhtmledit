@@ -48,7 +48,7 @@ int main(int argc, char **argv)
     QApplication app(argc, argv);
 		app.setAttribute(Qt::AA_DontShowIconsInMenus);
 		app.setOrganizationDomain("webkit.org");
-		app.setApplicationName("QtHtmlEditor");
+		app.setApplicationName("ZenHtmlEditor");
 		app.setOrganizationName("WebKit");
 		app.setWindowIcon(QIcon(":/images/application_edit.png"));
 #if QT_VERSION >= 0x040400
