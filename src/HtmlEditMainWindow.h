@@ -135,8 +135,8 @@ private slots:
     void handleViewAboutToShow();
 
 private:
-    //! Converts the passed \a rgba color string to a QColor
-    QColor toColor(const QString& rgba);
+    //! Converts the passed \a name color string to a QColor
+    QColor toColor(const QString& name);
     
     //! Setup the UI.
     void setupUI();

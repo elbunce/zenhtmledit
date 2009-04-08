@@ -72,8 +72,7 @@
 /*----------------------------------------------------------------------
  * Contants
  *----------------------------------------------------------------------*/
-static QRegExp rgbaExpression("rgba\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)");
-static QRegExp rgbExpression("rgb\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)");
+
 
 /*----------------------------------------------------------------------
  * Main Code
@@ -336,10 +335,32 @@ void HtmlEditMainWindow::handleColorChange()
     QVariant res = evalJavaScript(QString("document.queryCommandValue('%1');").arg(whichColor));
     QColor color = toColor(res.toString());
     
-    color = QColorDialog::getColor(color, m_view);
+    QString title;
+    if (whichColor == QLatin1String("ForeColor"))
+        title = tr("Color");
+    else
+        title = tr("Background Color");
+    color = QColorDialog::getColor(color, m_view, title,
+                                   QColorDialog::ShowAlphaChannel);
     
     if (color.isValid())
-        evalJavaScript(QString("document.execCommand('%1', false, '%2');").arg(whichColor).arg(color.name()));
+    {
+        QString colorName;
+        if (color.spec() != QColor::Hsv) {
+            if (color.alpha() == 255)
+                colorName = QString("rgb(%1,%2,%3)").arg(color.red()).arg(color.green()).arg(color.blue());
+            else
+                colorName = QString("rgba(%1,%2,%3,%4)").arg(color.red()).arg(color.green()).arg(color.blue()).arg(color.alphaF());
+        } else {
+            if (color.alpha() == 255)
+                colorName = QString("hsl(%1,%2%%,%3%%)").arg(color.hue()).arg(color.saturation() * 100).arg(color.value() * 100);
+            else
+                colorName = QString("hsla(%1,%2%%,%3%%,%4)").arg(color.hue()).arg(color.saturation() * 100).arg(color.value() * 100).arg(color.alphaF());
+        }
+
+        qDebug() << "color=" << color << "color.name()=" << color.name() << "colorName=" << colorName;
+        evalJavaScript(QString("document.execCommand('%1', false, '%2');").arg(whichColor).arg(colorName));
+    }
 }
 
 void HtmlEditMainWindow::handleFontChanged(const QFont& font)
@@ -368,22 +389,39 @@ void HtmlEditMainWindow::handleViewAboutToShow()
 
 }
 
-QColor HtmlEditMainWindow::toColor(const QString& rgba)
+QColor HtmlEditMainWindow::toColor(const QString& name)
 {
-    // try to match rgba(r, g, b, a)
-    if (rgbaExpression.exactMatch(rgba)) {
-        QStringList ct = rgbaExpression.capturedTexts();
-        return QColor(ct.value(1).toInt(), ct.value(2).toInt(), ct.value(3).toInt(), ct.value(4).toInt());
-    }
+//    qDebug() << "HtmlEditMainWindow::toColor(" << name << ")";
+    if (name == QLatin1String("none"))
+        return QColor();
+
+    if (name == QLatin1String("transparent"))
+        return QColor(0, 0, 0, 0);
     
     // try to match rgb(r, g, b)
-    if (rgbExpression.exactMatch(rgba)) {
-        QStringList ct = rgbExpression.capturedTexts();
-        return QColor(ct.value(1).toInt(), ct.value(2).toInt(), ct.value(3).toInt());
+    int index = name.indexOf(QLatin1String("rgb("));
+    if (index != -1) {
+        index += 4;
+        int end = name.indexOf(QLatin1Char(')'));
+        QStringList colors = name.mid(index, end - index).split(QLatin1Char(','));
+        if (colors.count() == 3)
+            return QColor(colors[0].toInt(), colors[1].toInt(),
+                          colors[2].toInt());
+    }
+
+    // try to match rgba(r, g, b, a)
+    index = name.indexOf(QLatin1String("rgba("));
+    if (index != -1) {
+        index += 5;
+        int end = name.indexOf(QLatin1Char(')'));
+        QStringList colors = name.mid(index, end - index).split(QLatin1Char(','));
+        if (colors.count() == 4)
+            return QColor(colors[0].toInt(), colors[1].toInt(), colors[2].toInt(),
+                          qMax(0, int(255.0 * colors[3].toDouble())));
     }
     
     // convert from name
-    return QColor(rgba);
+    return QColor(name);
 }
 
 void HtmlEditMainWindow::setupUI()
@@ -433,12 +471,12 @@ void HtmlEditMainWindow::setupActions()
 {
     QAction* action;
     m_colorAction = new QAction(QIcon(":/images/palette.png"), tr("Color"), this);
-    m_colorAction->setData("ForeColor");
+    m_colorAction->setData(QLatin1String("ForeColor"));
     m_colorAction->setIconVisibleInMenu(false);
     connect(m_colorAction, SIGNAL(triggered(bool)),
             this, SLOT(handleColorChange()));
     m_backgroundColorAction = new QAction(QIcon(":/images/palette.png"), tr("Background Color"), this);
-    m_backgroundColorAction->setData("BackColor");
+    m_backgroundColorAction->setData(QLatin1String("BackColor"));
     m_backgroundColorAction->setIconVisibleInMenu(false);
     connect(m_backgroundColorAction, SIGNAL(triggered(bool)),
             this, SLOT(handleColorChange()));
